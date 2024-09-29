@@ -1,0 +1,130 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Product {
+  id          Int              @id @default(autoincrement())
+  name        String
+  description String?
+  categories  Category[]       // Many-to-many relationship with categories
+  sellers     SellerProduct[]   // Relationship to sellers through SellerProduct
+  images      Image[]
+}
+
+model Image {
+  id      Int       @id @default(autoincrement())
+  url     String
+  product Product   @relation(fields: [productId], references: [id])
+  productId Int
+}
+
+model Category {
+  id      Int       @id @default(autoincrement())
+  name    String
+  products Product[]  // Many-to-many with products
+}
+
+model Size {
+  id      Int       @id @default(autoincrement())
+  value   String    // e.g., "US 9", "EU 42"
+  stock   Stock[]   // One-to-many relationship to Stock
+}
+
+model Color {
+  id      Int       @id @default(autoincrement())
+  name    String    // e.g., "Red", "Black"
+  stock   Stock[]   // One-to-many relationship to Stock
+}
+
+model Seller {
+  id      Int             @id @default(autoincrement())
+  name    String
+  products SellerProduct[]  // Relationship to products through SellerProduct
+}
+
+model SellerProduct {
+  id          Int           @id @default(autoincrement())
+  seller      Seller        @relation(fields: [sellerId], references: [id])
+  sellerId    Int
+  product     Product       @relation(fields: [productId], references: [id])
+  productId   Int
+  price       Int           // Price set by the seller for this product
+  stock       Stock[]       // Relationship to stock for this seller-product combination
+  cartItems   CartItem[]    // Relationship to cart items that reference this seller-product
+  OrderItem OrderItem[]
+}
+
+model Stock {
+  id              Int           @id @default(autoincrement())
+  sellerProduct   SellerProduct @relation(fields: [sellerProductId], references: [id])
+  sellerProductId Int
+  size            Size          @relation(fields: [sizeId], references: [id])
+  sizeId          Int
+  color           Color         @relation(fields: [colorId], references: [id])
+  colorId         Int
+  quantity        Int           // Quantity available for this size, color, seller, product combination
+}
+
+model User {
+  id      Int       @id @default(autoincrement())
+  active  Boolean   @default(true)
+  name    String
+  lastName String
+  nationalCode String
+  phoneNumber String
+  email   String
+  password String
+  location Location[]
+  cart Cart[]
+  orders Order[]
+}
+
+model Location {
+  id      Int       @id @default(autoincrement())
+  name    String
+  address String
+  postalCode String
+  user User[]
+}
+
+model Cart {
+  id              Int            @id @default(autoincrement())
+  user            User           @relation(fields: [userId], references: [id])
+  userId         Int
+  cartItems       CartItem[]     // Relationship to cart items
+}
+
+model CartItem {
+  id             Int            @id @default(autoincrement())
+  cart           Cart           @relation(fields: [cartId], references: [id])
+  cartId         Int
+  sellerProduct   SellerProduct  @relation(fields: [sellerProductId], references: [id])
+  sellerProductId Int
+  quantity       Int            // Quantity of this item in the cart
+}
+
+model Order {
+  id           Int          @id @default(autoincrement())
+  user         User         @relation(fields: [userId], references: [id])
+  userId       Int
+  orderItems   OrderItem[]  // Relationship to order items
+  totalAmount  Float        // Total amount for the order
+  paymentStatus String       // e.g., "Pending", "Completed", "Cancelled"
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+}
+
+model OrderItem {
+  id         Int       @id @default(autoincrement())
+  order      Order     @relation(fields: [orderId], references: [id])
+  orderId    Int
+  sellerProduct SellerProduct @relation(fields: [sellerProductId], references: [id])
+  sellerProductId Int
+  quantity   Int       // Quantity purchased for this item
+  price      Float     // Price at the time of purchase
+}

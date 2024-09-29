@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  app:
+    image: bun-express:latest
+    container_name: app
+    ports:
+      - "3000:3000"
+    networks:
+      - app_network
+    env_file:
+      - .env
+
+  postgres:
+    image: postgres:latest
+    container_name: postgres_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - app_network
+    env_file:
+      - .env
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: pgadmin
+    ports:
+      - "5050:80"
+    depends_on:
+      - postgres
+    networks:
+      - app_network
+    env_file:
+      - .env
+
+volumes:
+  postgres_data:
+
+networks:
+  app_network:
+    driver: bridge
